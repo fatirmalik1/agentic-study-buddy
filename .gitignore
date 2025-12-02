@@ -1,0 +1,9 @@
+logs/
+venv/
+.env
+LLMOPS_3.egg-info/
+results/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+FULL_DOCUMENTATION.md
