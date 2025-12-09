@@ -1,15 +1,18 @@
 from langchain_core.output_parsers import PydanticOutputParser
 from src.models.question_schemas import MCQQuestion,FillBlankQuestion
 from src.prompts.templates import mcq_prompt_template,fill_blank_prompt_template
-from src.llm.groq_client import get_groq_llm
+from src.llm.client_factory import get_llm
 from src.config.settings import settings
 from src.common.logger import get_logger
 from src.common.custom_exception import CustomException
 
 
 class QuestionGenerator:
-    def __init__(self):
-        self.llm = get_groq_llm()
+    def __init__(self, provider: str | None = None, model_name: str | None = None, temperature: float | None = None):
+        self.provider = provider or settings.DEFAULT_PROVIDER
+        self.model_name = model_name or settings.DEFAULT_MODEL
+        self.temperature = temperature
+        self.llm = get_llm(self.provider, self.model_name, self.temperature)
         self.logger = get_logger(self.__class__.__name__)
 
     def _retry_and_parse(self,prompt,parser,topic,difficulty):

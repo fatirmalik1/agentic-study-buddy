@@ -1,8 +1,15 @@
 import os
 import streamlit as st
 from dotenv import load_dotenv
+from src.config.settings import settings
 from src.utils.helpers import *
 from src.generator.question_generator import QuestionGenerator
+
+PROVIDER_OPTIONS = ["OpenAI", "Groq"]
+OPENAI_MODELS = ["gpt-5", "gpt-5-mini", "gpt-4o", "gpt-4-turbo"]
+GROQ_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "openai/gpt-oss-120b"]
+PROVIDER_MODELS = {"OpenAI": OPENAI_MODELS, "Groq": GROQ_MODELS}
+PROVIDER_LOOKUP = {option.lower(): option for option in PROVIDER_OPTIONS}
 load_dotenv()
 
 
@@ -23,6 +30,22 @@ def main():
         
 
     st.title("Study Buddy AI NEW NEW NEW NEW")
+    st.caption("Choose the LLM provider and model that will generate your quiz content.")
+
+    default_provider_key = PROVIDER_LOOKUP.get(
+        (settings.DEFAULT_PROVIDER or "").strip().lower(), "Groq"
+    )
+    provider_index = PROVIDER_OPTIONS.index(default_provider_key)
+    provider = st.selectbox("Select Provider", PROVIDER_OPTIONS, index=provider_index)
+
+    model_choices = PROVIDER_MODELS[provider]
+    preferred_model = (
+        settings.DEFAULT_MODEL
+        if settings.DEFAULT_MODEL in model_choices
+        else model_choices[0]
+    )
+    model_index = model_choices.index(preferred_model)
+    model_name = st.selectbox("Select Model", model_choices, index=model_index)
 
     st.sidebar.header("Quiz Settings")
 
@@ -51,7 +74,7 @@ def main():
     if st.sidebar.button("Generate Quiz"):
         st.session_state.quiz_submitted = False
 
-        generator = QuestionGenerator()
+        generator = QuestionGenerator(provider=provider, model_name=model_name)
         succces = st.session_state.quiz_manager.generate_questions(
             generator,
             topic,question_type,difficulty,num_questions
