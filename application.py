@@ -29,7 +29,7 @@ def main():
         st.session_state.rerun_trigger = False
         
 
-    st.title("Study Buddy AI NEW NEW NEW NEW")
+    st.title("Study Buddy AI ")
     st.caption("Choose the LLM provider and model that will generate your quiz content.")
 
     default_provider_key = PROVIDER_LOOKUP.get(
