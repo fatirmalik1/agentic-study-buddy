@@ -1,6 +1,9 @@
 from langchain_core.output_parsers import PydanticOutputParser
-from src.models.question_schemas import MCQQuestion,FillBlankQuestion
-from src.prompts.templates import mcq_prompt_template,fill_blank_prompt_template
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from src.models.question_schemas import MCQQuestion, FillBlankQuestion
+from src.prompts.templates import mcq_prompt_template, fill_blank_prompt_template
+from src.prompts.personas import get_persona_prompt
 from src.llm.client_factory import get_llm
 from src.config.settings import settings
 from src.common.logger import get_logger
@@ -8,10 +11,17 @@ from src.common.custom_exception import CustomException
 
 
 class QuestionGenerator:
-    def __init__(self, provider: str | None = None, model_name: str | None = None, temperature: float | None = None):
+    def __init__(
+        self,
+        provider: str | None = None,
+        model_name: str | None = None,
+        persona_name: str | None = None,
+        temperature: float | None = None,
+    ):
         self.provider = provider or settings.DEFAULT_PROVIDER
         self.model_name = model_name or settings.DEFAULT_MODEL
         self.temperature = temperature
+        self.persona_prompt = get_persona_prompt(persona_name)
         self.llm = get_llm(self.provider, self.model_name, self.temperature)
         self.logger = get_logger(self.__class__.__name__)
 
@@ -21,7 +31,13 @@ class QuestionGenerator:
             try:
                 self.logger.info(f"Generating question for topic {topic} with difficulty {difficulty}")
 
-                response = self.llm.invoke(prompt.format(topic=topic , difficulty=difficulty))
+                human_content = prompt.format(topic=topic , difficulty=difficulty)
+                messages = []
+                if self.persona_prompt:
+                    messages.append(SystemMessage(content=self.persona_prompt))
+                messages.append(HumanMessage(content=human_content))
+
+                response = self.llm.invoke(messages)
 
                 parsed = parser.parse(response.content)
 

@@ -2,6 +2,7 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 from src.config.settings import settings
+from src.prompts.personas import PERSONA_NAMES, get_persona_description
 from src.utils.helpers import *
 from src.generator.question_generator import QuestionGenerator
 
@@ -71,10 +72,26 @@ def main():
     
 
     
+    persona_choices = PERSONA_NAMES
+    default_persona = (
+        settings.DEFAULT_PERSONA
+        if settings.DEFAULT_PERSONA in persona_choices
+        else persona_choices[0]
+    )
+    persona_index = persona_choices.index(default_persona)
+    persona_choice = st.sidebar.selectbox(
+        "Select Persona", persona_choices, index=persona_index
+    )
+    persona_description = get_persona_description(persona_choice)
+    if persona_description:
+        st.sidebar.caption(persona_description)
+
     if st.sidebar.button("Generate Quiz"):
         st.session_state.quiz_submitted = False
 
-        generator = QuestionGenerator(provider=provider, model_name=model_name)
+        generator = QuestionGenerator(
+            provider=provider, model_name=model_name, persona_name=persona_choice
+        )
         succces = st.session_state.quiz_manager.generate_questions(
             generator,
             topic,question_type,difficulty,num_questions
